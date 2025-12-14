@@ -144,17 +144,9 @@ opes: OPES_METAD_EXPLORE ...
     SIGMA=0.5
 ...
 
-# Prevent polymer from going INTO/through the PE surface
-# Adsorbed state is at dZ ~ -3 nm, block going above (toward 0)
-UPPER_WALLS ARG=dZ AT=-2.0 KAPPA=500.0 EXP=2 LABEL=uwall_surface
+PRINT STRIDE=100 FILE=COLVAR_BOOTSTRAP ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dZ,ree,nw,contacts,opes.bias FMT=%12.6f
 
-# Prevent polymer from escaping box (desorption direction)
-# Fully desorbed target at dZ ~ -20 nm
-LOWER_WALLS ARG=dZ AT=-22.0 KAPPA=200.0 LABEL=lwall_box
-
-PRINT STRIDE=100 FILE=COLVAR_BOOTSTRAP ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dZ,ree,nw,contacts,opes.bias,uwall_surface.bias,lwall_box.bias FMT=%12.6f
-
-PRINT STRIDE=500 FILE=COLVAR_DETAILED ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dX,dY,dZ,ree,nw,nw_tight,contacts,opes.*,uwall_surface.*,lwall_box.* FMT=%12.6f
+PRINT STRIDE=500 FILE=COLVAR_DETAILED ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dX,dY,dZ,ree,nw,nw_tight,contacts,opes.* FMT=%12.6f
 
 ENDPLUMED
 EOF
