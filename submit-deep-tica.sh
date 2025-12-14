@@ -147,16 +147,17 @@ opes: OPES_METAD ...
     NLIST
 ...
 
-# Prevent polymer from escaping the box (soft upper wall at 25 nm)
-UPPER_WALLS ARG=dZ AT=25.0 KAPPA=200.0 LABEL=uwall
+# Prevent polymer from going INTO/through the PE surface
+# Adsorbed state is at dZ ~ -3 nm, block going above (toward 0)
+UPPER_WALLS ARG=dZ AT=-2.0 KAPPA=500.0 EXP=2 LABEL=uwall_surface
 
-# Prevent polymer from going through/deeper into the surface
-# Adsorbed state is at dZ ~ -3.34 nm, so set hard wall slightly below
-LOWER_WALLS ARG=dZ AT=-5.0 KAPPA=500.0 EXP=2 LABEL=lwall_surface
+# Prevent polymer from escaping box (desorption direction)
+# Fully desorbed target at dZ ~ -20 nm
+LOWER_WALLS ARG=dZ AT=-22.0 KAPPA=200.0 LABEL=lwall_box
 
-PRINT STRIDE=100 FILE=COLVAR_BOOTSTRAP ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dZ,ree,nw,contacts,opes.bias,uwall.bias,lwall_surface.bias FMT=%12.6f
+PRINT STRIDE=100 FILE=COLVAR_BOOTSTRAP ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dZ,ree,nw,contacts,opes.bias,uwall_surface.bias,lwall_box.bias FMT=%12.6f
 
-PRINT STRIDE=500 FILE=COLVAR_DETAILED ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dX,dY,dZ,ree,nw,nw_tight,contacts,opes.*,uwall.*,lwall_surface.* FMT=%12.6f
+PRINT STRIDE=500 FILE=COLVAR_DETAILED ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dX,dY,dZ,ree,nw,nw_tight,contacts,opes.*,uwall_surface.*,lwall_box.* FMT=%12.6f
 
 ENDPLUMED
 EOF
