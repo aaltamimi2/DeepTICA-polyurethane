@@ -118,10 +118,18 @@ beta = 1.0 / (kb * temp)
 
 # Detect bias type and compute appropriate weights
 if 'opes.bias' in colvar.columns:
-    print("   Detected: OPES metadynamics")
+    # Works for both OPES_METAD and OPES_EXPANDED (umbrella sampling)
     bias = colvar['opes.bias'].values
+
+    # Check if this is OPES_EXPANDED (umbrella sampling) by looking for umbrella columns
+    if any('umbrellas' in col for col in colvar.columns):
+        print("   Detected: OPES_EXPANDED (umbrella sampling)")
+    else:
+        print("   Detected: OPES metadynamics")
+
+    # Standard OPES reweighting: logweight = beta * bias
     logweight = beta * bias
-    logweight = np.clip(logweight, -20, 20)
+    logweight = np.clip(logweight, -50, 50)  # Wider clip for umbrella sampling
     print(f"   Bias range: [{bias.min():.2f}, {bias.max():.2f}] kJ/mol")
     print(f"   Logweight range: [{logweight.min():.2f}, {logweight.max():.2f}]")
 
