@@ -110,19 +110,31 @@ for i, col in enumerate(descriptor_cols):
     print(f"   {col:15s}: [{min_val:.3f}, {max_val:.3f}] (mean: {mean_val:.3f}, std: {std_val:.3f})")
 
 # ==================== 3. COMPUTE REWEIGHTING ====================
-print("\n3. Computing reweighting factors from OPES bias...")
-
-bias = colvar['opes.bias'].values
+print("\n3. Computing reweighting factors...")
 
 kb = 0.008314  # kJ/(mol·K)
 temp = 300.0   # K
 beta = 1.0 / (kb * temp)
 
-logweight = beta * bias
-logweight = np.clip(logweight, -20, 20)  # Wider clip for aggressive biasing
+# Detect bias type and compute appropriate weights
+if 'opes.bias' in colvar.columns:
+    print("   Detected: OPES metadynamics")
+    bias = colvar['opes.bias'].values
+    logweight = beta * bias
+    logweight = np.clip(logweight, -20, 20)
+    print(f"   Bias range: [{bias.min():.2f}, {bias.max():.2f}] kJ/mol")
+    print(f"   Logweight range: [{logweight.min():.2f}, {logweight.max():.2f}]")
 
-print(f"   Bias range: [{bias.min():.2f}, {bias.max():.2f}] kJ/mol")
-print(f"   Logweight range: [{logweight.min():.2f}, {logweight.max():.2f}]")
+elif 'pull.bias' in colvar.columns:
+    print("   Detected: Steered MD (MOVINGRESTRAINT)")
+    print("   Using uniform weights (non-equilibrium trajectory)")
+    # For steered MD, use uniform weights - we're learning CV shape, not computing FES
+    logweight = np.zeros(len(colvar))
+    print("   All frames weighted equally for CV learning")
+
+else:
+    print("   No bias column found - using uniform weights")
+    logweight = np.zeros(len(colvar))
 
 weights = np.exp(logweight - logweight.max())
 weights = weights / weights.sum()
