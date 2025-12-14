@@ -129,22 +129,19 @@ nw_tight: COORDINATION GROUPA=LIG GROUPB=HOH R_0=0.45 NN=6 MM=12
 contacts: COORDINATION GROUPA=LIG GROUPB=PE R_0=0.6 NN=6 MM=12
 
 #===============================================================================
-# AGGRESSIVE OPES_METAD SETTINGS
-# - ARG=dZ: Bias the z-component directly (desorption coordinate)
-# - PACE=100: Deposit bias every 100 steps (2 ps) - very fast
-# - SIGMA=0.3: Fine resolution for detailed FES
-# - BARRIER=400: High expected barrier to maintain large hills
-# - BIASFACTOR=80: Nearly constant hill heights (minimal decay)
+# OPES_METAD_EXPLORE - Exploration Mode
+# - More aggressive exploration than OPES_METAD
+# - Good for unknown barriers and testing CVs
+# - BARRIER is just a rough estimate (doesn't need to be precise)
+# - BIASFACTOR controls well-tempered target distribution
 #===============================================================================
-opes: OPES_METAD ...
+opes: OPES_METAD_EXPLORE ...
     ARG=dZ
-    PACE=100
-    SIGMA=0.3
+    PACE=500
+    BARRIER=50
+    BIASFACTOR=20
     FILE=HILLS_bootstrap
-    BARRIER=400
-    BIASFACTOR=80
-    SIGMA_MIN=0.1
-    NLIST
+    SIGMA=0.5
 ...
 
 # Prevent polymer from going INTO/through the PE surface
