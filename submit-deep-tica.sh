@@ -93,6 +93,12 @@ echo "Creating PLUMED input..."
 cat > plumed-bootstrap.dat << 'EOF'
 UNITS LENGTH=nm ENERGY=kj/mol TIME=ps
 
+#===============================================================================
+# AGGRESSIVE DESORPTION CONFIGURATION
+# Goal: Force polymer desorption within 10-20 ns
+# Strategy: High biasfactor (no height decay) + fast deposition + direct dZ bias
+#===============================================================================
+
 PE: GROUP NDX_FILE=PE-PEUS-HOH.ndx NDX_GROUP=PE
 LIG: GROUP NDX_FILE=PE-PEUS-HOH.ndx NDX_GROUP=PIS_PUS_PTS
 HOH: GROUP NDX_FILE=PE-PEUS-HOH.ndx NDX_GROUP=W
@@ -102,30 +108,55 @@ WHOLEMOLECULES ENTITY0=PE,LIG
 COM_PE: COM ATOMS=PE
 COM_LIG: COM ATOMS=LIG
 
+# Descriptors for DeepTICA training
 rg_lig: GYRATION TYPE=RADIUS ATOMS=LIG
-
 asph_lig: GYRATION TYPE=ASPHERICITY ATOMS=LIG
-
 acyl_lig: GYRATION TYPE=ACYLINDRICITY ATOMS=LIG
-
 dist_lig_pe: DISTANCE ATOMS=COM_LIG,COM_PE
+
 FIRST_BEAD: GROUP ATOMS=17001
 LAST_BEAD: GROUP ATOMS=17495
 ree: DISTANCE ATOMS=FIRST_BEAD,LAST_BEAD
 
+# Z-component is the desorption coordinate
 dist_components: DISTANCE ATOMS=COM_LIG,COM_PE COMPONENTS
 dX: COMBINE ARG=dist_components.x PERIODIC=NO
 dY: COMBINE ARG=dist_components.y PERIODIC=NO
 dZ: COMBINE ARG=dist_components.z PERIODIC=NO
+
 nw: COORDINATION GROUPA=LIG GROUPB=HOH R_0=0.6 NN=6 MM=12
 nw_tight: COORDINATION GROUPA=LIG GROUPB=HOH R_0=0.45 NN=6 MM=12
 contacts: COORDINATION GROUPA=LIG GROUPB=PE R_0=0.6 NN=6 MM=12
 
-opes: OPES_METAD ARG=dist_lig_pe PACE=200 SIGMA=2 FILE=HILLS_bootstrap BARRIER=200 BIASFACTOR=2
+#===============================================================================
+# AGGRESSIVE OPES_METAD SETTINGS
+# - ARG=dZ: Bias the z-component directly (desorption coordinate)
+# - PACE=100: Deposit bias every 100 steps (2 ps) - very fast
+# - SIGMA=0.3: Fine resolution for detailed FES
+# - BARRIER=400: High expected barrier to maintain large hills
+# - BIASFACTOR=80: Nearly constant hill heights (minimal decay)
+#===============================================================================
+opes: OPES_METAD ...
+    ARG=dZ
+    PACE=100
+    SIGMA=0.3
+    FILE=HILLS_bootstrap
+    BARRIER=400
+    BIASFACTOR=80
+    SIGMA_MIN=0.1
+    NLIST
+...
 
-PRINT STRIDE=100 FILE=COLVAR_BOOTSTRAP ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dZ,ree,nw,contacts,opes.bias FMT=%12.6f
+# Prevent polymer from escaping the box (soft upper wall at 20 nm)
+UPPER_WALLS ARG=dZ AT=20.0 KAPPA=200.0 LABEL=uwall
 
-PRINT STRIDE=500 FILE=COLVAR_DETAILED ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dX,dY,dZ,ree,nw,nw_tight,contacts,opes.* FMT=%12.6f
+# Also add a gentle push away from surface to help initiate desorption
+# This adds a small constant force pushing the polymer away from the surface
+LOWER_WALLS ARG=dZ AT=4.0 KAPPA=50.0 EXP=2 LABEL=lwall_push
+
+PRINT STRIDE=100 FILE=COLVAR_BOOTSTRAP ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dZ,ree,nw,contacts,opes.bias,uwall.bias,lwall_push.bias FMT=%12.6f
+
+PRINT STRIDE=500 FILE=COLVAR_DETAILED ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dX,dY,dZ,ree,nw,nw_tight,contacts,opes.*,uwall.*,lwall_push.* FMT=%12.6f
 
 ENDPLUMED
 EOF
