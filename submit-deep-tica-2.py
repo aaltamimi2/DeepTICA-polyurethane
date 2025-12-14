@@ -310,7 +310,7 @@ def create_extensive_visualizations(results, X, t, colvar, descriptor_cols, outp
         ax.hist(cvs[:, cv_idx], bins=50, alpha=0.7, edgecolor='black', density=True)
         ax.axvline(cvs[:, cv_idx].mean(), color='r', linestyle='--',
                    label=f'Mean: {cvs[:, cv_idx].mean():.2f}')
-        ax.axvline(cvs[:, cv_idx].median(), color='g', linestyle=':',
+        ax.axvline(np.median(cvs[:, cv_idx]), color='g', linestyle=':',
                    label=f'Median: {np.median(cvs[:, cv_idx]):.2f}')
         ax.set_xlabel(f'DeepTICA CV{cv_idx+1}')
         ax.set_ylabel('Density')
