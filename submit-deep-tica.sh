@@ -129,24 +129,31 @@ nw_tight: COORDINATION GROUPA=LIG GROUPB=HOH R_0=0.45 NN=6 MM=12
 contacts: COORDINATION GROUPA=LIG GROUPB=PE R_0=0.6 NN=6 MM=12
 
 #===============================================================================
-# OPES_METAD_EXPLORE - Exploration Mode
-# - More aggressive exploration than OPES_METAD
-# - Good for unknown barriers and testing CVs
-# - BARRIER is just a rough estimate (doesn't need to be precise)
-# - BIASFACTOR controls well-tempered target distribution
+# STEERED MD - Pull polymer off surface
+# Uses MOVINGRESTRAINT to force desorption from dZ=-3 to dZ=-20 nm
+# This generates training data for DeepTICA
 #===============================================================================
-opes: OPES_METAD_EXPLORE ...
+
+# Moving restraint: pull from starting position to desorbed state
+# AT0=-3.3: starting position (adsorbed)
+# AT1=-20.0: target position (desorbed)
+# STEP0=0: start immediately
+# STEP1=25000000: reach target at 500 ns (25M steps * 20fs = 500 ns)
+# KAPPA=100: spring constant (kJ/mol/nm^2) - strong enough to pull
+
+pull: MOVINGRESTRAINT ...
     ARG=dZ
-    PACE=500
-    BARRIER=50
-    BIASFACTOR=20
-    FILE=HILLS_bootstrap
-    SIGMA=0.5
+    AT0=-3.3
+    AT1=-20.0
+    STEP0=0
+    STEP1=25000000
+    KAPPA0=100.0
+    KAPPA1=100.0
 ...
 
-PRINT STRIDE=100 FILE=COLVAR_BOOTSTRAP ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dZ,ree,nw,contacts,opes.bias FMT=%12.6f
+PRINT STRIDE=100 FILE=COLVAR_BOOTSTRAP ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dZ,ree,nw,contacts,pull.bias,pull.force2 FMT=%12.6f
 
-PRINT STRIDE=500 FILE=COLVAR_DETAILED ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dX,dY,dZ,ree,nw,nw_tight,contacts,opes.* FMT=%12.6f
+PRINT STRIDE=500 FILE=COLVAR_DETAILED ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dX,dY,dZ,ree,nw,nw_tight,contacts,pull.* FMT=%12.6f
 
 ENDPLUMED
 EOF
