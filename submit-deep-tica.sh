@@ -129,30 +129,28 @@ nw_tight: COORDINATION GROUPA=LIG GROUPB=HOH R_0=0.45 NN=6 MM=12
 contacts: COORDINATION GROUPA=LIG GROUPB=PE R_0=0.6 NN=6 MM=12
 
 #===============================================================================
-# OPES EXPANDED ENSEMBLE - Umbrella Sampling along dZ
-# Proper reweightable umbrella sampling for DeepTICA training
-# Uses ECV_UMBRELLAS_LINE to sample full desorption pathway
+# AGGRESSIVE OPES_METAD - Force Desorption
+# Very aggressive settings to escape deep adsorption well
 #===============================================================================
 
-# Umbrella windows along dZ from adsorbed (-3.3 nm) to desorbed (-20 nm)
-umbrellas: ECV_UMBRELLAS_LINE ...
+# Gentle push away from surface to help initiate desorption
+# Acts like a soft wall at dZ = -3.0 nm pushing toward more negative dZ
+UPPER_WALLS ARG=dZ AT=-3.0 KAPPA=100.0 EXP=2 LABEL=push_off
+
+opes: OPES_METAD ...
     ARG=dZ
-    CV_MIN=-20.0
-    CV_MAX=-3.0
+    PACE=200
     SIGMA=0.5
-    BARRIER=50
+    FILE=HILLS_bootstrap
+    BARRIER=1000
+    BIASFACTOR=100
+    SIGMA_MIN=0.2
+    NLIST
 ...
 
-# OPES Expanded ensemble sampling
-opes: OPES_EXPANDED ...
-    ARG=umbrellas.dZ
-    PACE=500
-    FILE=KERNELS_bootstrap
-...
+PRINT STRIDE=100 FILE=COLVAR_BOOTSTRAP ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dZ,ree,nw,contacts,opes.bias,push_off.bias FMT=%12.6f
 
-PRINT STRIDE=100 FILE=COLVAR_BOOTSTRAP ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dZ,ree,nw,contacts,opes.bias FMT=%12.6f
-
-PRINT STRIDE=500 FILE=COLVAR_DETAILED ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dX,dY,dZ,ree,nw,nw_tight,contacts,opes.*,umbrellas.* FMT=%12.6f
+PRINT STRIDE=500 FILE=COLVAR_DETAILED ARG=rg_lig,asph_lig,acyl_lig,dist_lig_pe,dX,dY,dZ,ree,nw,nw_tight,contacts,opes.*,push_off.* FMT=%12.6f
 
 ENDPLUMED
 EOF
